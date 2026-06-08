@@ -289,26 +289,37 @@ def _summary(
     return pd.DataFrame(rows)
 def _write_named_outputs(latest_date: object) -> None:
     suffix = f"_{latest_date}.csv"
+
+    source_files = []
     for path in OUTPUT_DIR.glob(f"*{suffix}"):
         if path.name.endswith("_named.csv"):
             continue
+        source_files.append(path)
+
+    for path in source_files:
         frame = pd.read_csv(path)
+
         if path.name.startswith("summary_") and "value" in frame.columns:
             frame["value"] = frame["value"].map(_normalize_summary_symbols)
-        frame.to_csv(OUTPUT_DIR / f"{path.stem}_named.csv", index=False, encoding="utf-8-sig")
+
+        target = OUTPUT_DIR / f"{path.stem}_named.csv"
+        frame.to_csv(target, index=False, encoding="utf-8-sig")
 
 
 def _normalize_summary_symbols(value: object) -> object:
     if not isinstance(value, str) or ".TW" not in value:
         return value
+
     parts = []
     for token in value.split(","):
         token = token.strip()
         pieces = token.split()
+
         if len(pieces) >= 2:
             parts.append(f"{pieces[0]} {pieces[1]}")
         else:
             parts.append(token)
+
     return ",".join(parts)
     
 if __name__ == "__main__":
