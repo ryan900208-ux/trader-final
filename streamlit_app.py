@@ -174,7 +174,7 @@ def _records(payload: dict) -> None:
 def _setup_notes() -> None:
     st.markdown(
         """
-### Automation
+### Automation"""
 
 Daily signal files are updated by:
 
