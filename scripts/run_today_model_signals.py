@@ -71,6 +71,7 @@ def main() -> None:
     candidates.to_csv(OUTPUT_DIR / f"latest_candidates_{latest_date.date()}.csv", index=False)
     summary = _summary(panel, latest, candidates, rankings, config)
     summary.to_csv(OUTPUT_DIR / f"summary_{latest_date.date()}.csv", index=False)
+    _write_named_outputs(latest_date.date())
 
     print(f"latest_date={latest_date.date()}")
     print(f"market_regime={latest['market_regime'].dropna().iloc[0] if not latest.empty else 'NA'}")
@@ -286,7 +287,29 @@ def _summary(
         )
         rows.append({"item": f"{name}_top{config['max_positions']}", "value": top_symbols})
     return pd.DataFrame(rows)
+def _write_named_outputs(latest_date: object) -> None:
+    suffix = f"_{latest_date}.csv"
+    for path in OUTPUT_DIR.glob(f"*{suffix}"):
+        if path.name.endswith("_named.csv"):
+            continue
+        frame = pd.read_csv(path)
+        if path.name.startswith("summary_") and "value" in frame.columns:
+            frame["value"] = frame["value"].map(_normalize_summary_symbols)
+        frame.to_csv(OUTPUT_DIR / f"{path.stem}_named.csv", index=False, encoding="utf-8-sig")
 
 
+def _normalize_summary_symbols(value: object) -> object:
+    if not isinstance(value, str) or ".TW" not in value:
+        return value
+    parts = []
+    for token in value.split(","):
+        token = token.strip()
+        pieces = token.split()
+        if len(pieces) >= 2:
+            parts.append(f"{pieces[0]} {pieces[1]}")
+        else:
+            parts.append(token)
+    return ",".join(parts)
+    
 if __name__ == "__main__":
     main()
