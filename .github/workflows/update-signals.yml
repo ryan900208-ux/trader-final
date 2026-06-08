@@ -3,8 +3,12 @@ name: Update Fixed8 Signals
 on:
   workflow_dispatch:
   schedule:
-    # 07:45 UTC = 15:45 Asia/Taipei
-    - cron: "45 7 * * 1-5"
+    # 11:00 UTC = 19:00 Asia/Taipei, after yfinance usually settles Taiwan close data
+    - cron: "0 11 * * 1-5"
+
+concurrency:
+  group: fixed8-signals-main
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -16,6 +20,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -41,8 +47,18 @@ jobs:
           FIXED8_PRICE_CACHE_DIR: ${{ github.workspace }}/work/price_cache
         run: python scripts/run_today_model_signals.py
 
-      - name: Commit updated signals
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "Update Fixed8 daily signals"
-          file_pattern: outputs/today_model_signals/*.csv
+      - name: Commit and push updated signals
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add outputs/today_model_signals/*.csv
+
+          if git diff --cached --quiet; then
+            echo "No signal changes to commit."
+            exit 0
+          fi
+
+          git commit -m "Update Fixed8 daily signals"
+          git pull --rebase origin main
+          git push origin HEAD:main
