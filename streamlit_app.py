@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
@@ -14,6 +15,8 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 os.environ.setdefault("FIXED8_DATA_DIR", str(ROOT / "outputs"))
 os.environ.setdefault("FIXED8_PRICE_CACHE_DIR", str(ROOT / "work" / "price_cache"))
+SIGNAL_DIR = ROOT / "outputs" / "today_model_signals"
+APP_START_TIME = datetime.now().astimezone()
 
 try:
     from google_sheets_store import configured as sheets_configured
@@ -47,7 +50,9 @@ def main() -> None:
             st.warning("No signal files found yet. Wait for GitHub Actions to update outputs/today_model_signals.")
             return
 
+        _data_status(payload)
         _metrics(payload)
+
         tab_signal, tab_portfolio, tab_records, tab_setup = st.tabs(
             ["Signals", "Portfolio", "Records", "Setup"]
         )
@@ -87,6 +92,30 @@ def _sync_from_remote() -> None:
         sync_from_google_sheets(st.secrets, PAPER_DIR)
     except Exception as exc:
         st.warning(f"Google Sheets read failed. Showing local files instead: {exc}")
+
+
+def _data_status(payload: dict) -> None:
+    latest_file = _latest_signal_file()
+    with st.expander("Data status", expanded=True):
+        cols = st.columns(4)
+        cols[0].metric("Signal date", payload["latest_date"])
+        cols[1].metric("App started", APP_START_TIME.strftime("%Y-%m-%d %H:%M:%S %Z"))
+        cols[2].metric("Latest file", latest_file.name if latest_file else "NA")
+        cols[3].metric("File modified", _modified_time(latest_file) if latest_file else "NA")
+        st.caption(
+            "If GitHub has newer CSV files but this panel still shows an old file/date, reboot the Streamlit app or check that it deploys from the correct repo and branch."
+        )
+
+
+def _latest_signal_file() -> Path | None:
+    if not SIGNAL_DIR.exists():
+        return None
+    files = [path for path in SIGNAL_DIR.glob("*_named.csv") if path.is_file()]
+    return max(files, key=lambda path: path.stat().st_mtime) if files else None
+
+
+def _modified_time(path: Path) -> str:
+    return datetime.fromtimestamp(path.stat().st_mtime).astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
 
 
 def _metrics(payload: dict) -> None:
@@ -151,60 +180,3 @@ Daily signal files are updated by:
 
 ```text
 .github/workflows/update-signals.yml
-```
-
-Google Sheets paper-trading records are updated by:
-
-```text
-.github/workflows/update-paper.yml
-```
-
-Required GitHub repository secrets:
-
-```text
-GOOGLE_SHEET_ID
-GCP_SERVICE_ACCOUNT_JSON
-```
-
-Required Streamlit secret for login:
-
-```toml
-fixed8_password = "your-password"
-```
-"""
-    )
-
-
-def _signal_frame(rows: list[dict]) -> pd.DataFrame:
-    frame = pd.DataFrame(rows)
-    if frame.empty:
-        return frame
-    columns = [
-        "symbol",
-        "name",
-        "Close",
-        "fundamental_score",
-        "final_score",
-        "stable_ensemble_score",
-        "rs20_rank_pct",
-        "ret20",
-        "ret60",
-        "rsi14",
-        "volume_ratio",
-    ]
-    return frame[[column for column in columns if column in frame]]
-
-
-def _secret(key: str) -> str | None:
-    try:
-        return st.secrets[key]
-    except Exception:
-        return None
-
-
-def _money(value: float) -> str:
-    return f"{float(value):,.0f}"
-
-
-if __name__ == "__main__":
-    main()
