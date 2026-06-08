@@ -1,0 +1,45 @@
+{
+  "model_version": "v0.1 defensive_fund_ml_85_15",
+  "initial_cash": 1000000.0,
+  "cash": 1000000.0,
+  "start_date": "2026-06-08",
+  "last_signal_date": "2026-06-08",
+  "positions": [],
+  "pending_orders": [
+    {
+      "type": "buy",
+      "symbol": "3406.TW",
+      "name": "玉晶光",
+      "signal_date": "2026-06-08",
+      "status": "pending_next_open"
+    },
+    {
+      "type": "buy",
+      "symbol": "3054.TW",
+      "name": "立萬利",
+      "signal_date": "2026-06-08",
+      "status": "pending_next_open"
+    },
+    {
+      "type": "buy",
+      "symbol": "2330.TW",
+      "name": "台積電",
+      "signal_date": "2026-06-08",
+      "status": "pending_next_open"
+    },
+    {
+      "type": "buy",
+      "symbol": "1708.TW",
+      "name": "東鹼",
+      "signal_date": "2026-06-08",
+      "status": "pending_next_open"
+    },
+    {
+      "type": "buy",
+      "symbol": "3023.TW",
+      "name": "信邦",
+      "signal_date": "2026-06-08",
+      "status": "pending_next_open"
+    }
+  ]
+}

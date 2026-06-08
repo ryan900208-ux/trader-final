@@ -1,0 +1,12 @@
+﻿item,value
+latest_date,2026-06-08
+market_regime,bull
+universe_rows,1048
+candidate_rows,20
+max_positions,5
+position_weight,0.2
+aggressive_fund_final_ml_top5,"3406.TW 玉晶光,1708.TW 東鹼,2243.TW 宏旭-KY,3054.TW 立萬利,3023.TW 信邦"
+defensive_fund_ml_85_15_top5,"3406.TW 玉晶光,3054.TW 立萬利,2330.TW 台積電,1708.TW 東鹼,3023.TW 信邦"
+fundamental_only_top5,"3054.TW 立萬利,2330.TW 台積電,3406.TW 玉晶光,3023.TW 信邦,1708.TW 東鹼"
+final_score_only_top5,"3406.TW 玉晶光,1708.TW 東鹼,2243.TW 宏旭-KY,3023.TW 信邦,3054.TW 立萬利"
+stable_ml_only_top5,"2243.TW 宏旭-KY,6189.TW 豐藝,6005.TW 群益證,1708.TW 東鹼,3406.TW 玉晶光"
