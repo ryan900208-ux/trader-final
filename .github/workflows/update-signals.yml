@@ -1,0 +1,48 @@
+name: Update Fixed8 Signals
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 07:45 UTC = 15:45 Asia/Taipei
+    - cron: "45 7 * * 1-5"
+
+permissions:
+  contents: write
+
+jobs:
+  update-signals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Restore price cache
+        uses: actions/cache@v4
+        with:
+          path: work/price_cache
+          key: yfinance-price-cache-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            yfinance-price-cache-${{ runner.os }}-
+
+      - name: Run signal update
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}/scripts
+          FIXED8_DATA_DIR: ${{ github.workspace }}/outputs
+          FIXED8_PRICE_CACHE_DIR: ${{ github.workspace }}/work/price_cache
+        run: python scripts/run_today_model_signals.py
+
+      - name: Commit updated signals
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Update Fixed8 daily signals"
+          file_pattern: outputs/today_model_signals/*.csv
