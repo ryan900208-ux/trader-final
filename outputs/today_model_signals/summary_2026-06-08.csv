@@ -1,12 +1,12 @@
 item,value
 latest_date,2026-06-08
 market_regime,bull
-universe_rows,1071
-candidate_rows,97
+universe_rows,1080
+candidate_rows,141
 max_positions,5
 position_weight,0.2
-aggressive_fund_final_ml_top5,"1762.TW 中化生,8996.TW 高力,6902.TW GOGOLOOK,2420.TW 新巨,3406.TW 玉晶光"
-defensive_fund_ml_85_15_top5,"3054.TW 立萬利,3014.TW 聯陽,8996.TW 高力,2458.TW 義隆,6902.TW GOGOLOOK"
+aggressive_fund_final_ml_top5,"3135.TW 凌航,3167.TW 大量,6902.TW GOGOLOOK,2423.TW 固緯,6166.TW 凌華"
+defensive_fund_ml_85_15_top5,"3054.TW 立萬利,2423.TW 固緯,3135.TW 凌航,3025.TW 星通,6902.TW GOGOLOOK"
 fundamental_only_top5,"2408.TW 南亞科,3054.TW 立萬利,2330.TW 台積電,7769.TW 鴻勁,2344.TW 華邦電"
-final_score_only_top5,"2344.TW 華邦電,6902.TW GOGOLOOK,6446.TW 藥華藥,2408.TW 南亞科,8996.TW 高力"
-stable_ml_only_top5,"2243.TW 宏旭-KY,9933.TW 中鼎,2414.TW 精技,2762.TW 世界健身-KY,2376.TW 技嘉"
+final_score_only_top5,"6902.TW GOGOLOOK,2344.TW 華邦電,3167.TW 大量,6446.TW 藥華藥,2408.TW 南亞科"
+stable_ml_only_top5,"3033.TW 威健,2243.TW 宏旭-KY,2376.TW 技嘉,9933.TW 中鼎,3135.TW 凌航"
