@@ -1,8 +1,8 @@
 ﻿item,value
 latest_date,2026-06-09
 market_regime,bull
-universe_rows,1081
-candidate_rows,147
+universe_rows,1084
+candidate_rows,146
 max_positions,5
 position_weight,0.2
 aggressive_fund_final_ml_top5,"4807.TW 日成-KY,3167.TW 大量,6209.TW 今國光,2454.TW 聯發科,3025.TW 星通"
