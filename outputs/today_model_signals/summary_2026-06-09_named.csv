@@ -1,0 +1,12 @@
+﻿item,value
+latest_date,2026-06-09
+market_regime,bull
+universe_rows,1081
+candidate_rows,147
+max_positions,5
+position_weight,0.2
+aggressive_fund_final_ml_top5,"4807.TW 日成-KY,3167.TW 大量,6209.TW 今國光,2454.TW 聯發科,3025.TW 星通"
+defensive_fund_ml_85_15_top5,"2248.TW 華勝-KY,2527.TW 宏璟,3025.TW 星通,3167.TW 大量,2383.TW 台光電"
+fundamental_only_top5,"2408.TW 南亞科,2344.TW 華邦電,6446.TW 藥華藥,3167.TW 大量,2308.TW 台達電"
+final_score_only_top5,"3167.TW 大量,6209.TW 今國光,6446.TW 藥華藥,2344.TW 華邦電,3008.TW 大立光"
+stable_ml_only_top5,"3033.TW 威健,2376.TW 技嘉,2527.TW 宏璟,2762.TW 世界健身-KY,2243.TW 宏旭-KY"
