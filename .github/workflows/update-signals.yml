@@ -39,7 +39,14 @@ jobs:
           key: yfinance-price-cache-${{ runner.os }}-${{ github.run_id }}
           restore-keys: |
             yfinance-price-cache-${{ runner.os }}-
-
+            
+      - name: Show run time
+        run: |
+          echo "UTC time:"
+          date -u
+          echo "Taipei time:"
+          TZ=Asia/Taipei date
+          
       - name: Run signal update
         env:
           PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}/scripts
