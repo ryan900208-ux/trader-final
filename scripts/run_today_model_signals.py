@@ -74,7 +74,8 @@ def main() -> None:
     _write_named_outputs(latest_date.date())
 
     print(f"latest_date={latest_date.date()}")
-    print(f"market_regime={latest['market_regime'].dropna().iloc[0] if not latest.empty else 'NA'}")
+    market_state = _latest_market_regime(panel, latest)
+    print(f"market_regime={market_state}")
     print(f"universe_rows={len(latest)}")
     print(f"candidate_rows={len(candidates)}")
     print("\nSummary:")
@@ -93,6 +94,8 @@ def _refresh_and_load_prices(config: dict) -> dict[str, pd.DataFrame]:
     all_symbols = sorted(set(symbols + [config["benchmark_symbol"]]))
     cache_dir = Path(os.environ.get("FIXED8_PRICE_CACHE_DIR", ROOT / config["price_cache_dir"]))
     cache_dir.mkdir(parents=True, exist_ok=True)
+    if os.environ.get("FIXED8_SKIP_PRICE_REFRESH") == "1":
+        return _load_cached_prices(all_symbols, config["start"], cache_dir)
     latest_cached = _latest_cached_date(cache_dir)
     start = max(pd.Timestamp(config["start"]), latest_cached - pd.Timedelta(days=10)).strftime("%Y-%m-%d")
     fresh = download_ohlcv(
@@ -269,7 +272,7 @@ def _summary(
         {"item": "latest_date", "value": str(panel["date"].max().date())},
         {
             "item": "market_regime",
-            "value": latest["market_regime"].dropna().iloc[0] if not latest.empty else "NA",
+            "value": _latest_market_regime(panel, latest),
         },
         {"item": "universe_rows", "value": len(latest)},
         {"item": "candidate_rows", "value": len(candidates)},
@@ -287,40 +290,45 @@ def _summary(
         )
         rows.append({"item": f"{name}_top{config['max_positions']}", "value": top_symbols})
     return pd.DataFrame(rows)
+
+
+def _latest_market_regime(panel: pd.DataFrame, latest: pd.DataFrame) -> str:
+    if not latest.empty and "market_regime" in latest:
+        latest_values = latest["market_regime"].dropna()
+        if not latest_values.empty:
+            return str(latest_values.iloc[0])
+
+    if "market_regime" not in panel:
+        return "NA"
+
+    values = panel.sort_values("date")["market_regime"].dropna()
+    return str(values.iloc[-1]) if not values.empty else "NA"
+
+
 def _write_named_outputs(latest_date: object) -> None:
     suffix = f"_{latest_date}.csv"
-
-    source_files = []
     for path in OUTPUT_DIR.glob(f"*{suffix}"):
         if path.name.endswith("_named.csv"):
             continue
-        source_files.append(path)
-
-    for path in source_files:
         frame = pd.read_csv(path)
-
         if path.name.startswith("summary_") and "value" in frame.columns:
             frame["value"] = frame["value"].map(_normalize_summary_symbols)
-
-        target = OUTPUT_DIR / f"{path.stem}_named.csv"
-        frame.to_csv(target, index=False, encoding="utf-8-sig")
+        frame.to_csv(OUTPUT_DIR / f"{path.stem}_named.csv", index=False, encoding="utf-8-sig")
 
 
 def _normalize_summary_symbols(value: object) -> object:
     if not isinstance(value, str) or ".TW" not in value:
         return value
-
     parts = []
     for token in value.split(","):
         token = token.strip()
         pieces = token.split()
-
         if len(pieces) >= 2:
             parts.append(f"{pieces[0]} {pieces[1]}")
         else:
             parts.append(token)
-
     return ",".join(parts)
-    
+
+
 if __name__ == "__main__":
     main()
