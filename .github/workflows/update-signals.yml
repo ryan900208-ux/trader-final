@@ -1,71 +1,100 @@
-name: Update Fixed8 Signals
+from __future__ import annotations
 
-on:
-  workflow_dispatch:
-  schedule:
-    # 11:00 UTC = 19:00 Asia/Taipei, after yfinance usually settles Taiwan close data
-    - cron: "0 11 * * 1-5"
+import json
+import os
+from pathlib import Path
 
-concurrency:
-  group: fixed8-signals-main
-  cancel-in-progress: true
+import numpy as np
+import pandas as pd
 
-permissions:
-  contents: write
+from fixed8_backtest.data import download_ohlcv, read_universe
+from fixed8_backtest.fundamentals import load_fundamentals
+from fixed8_backtest.indicators import add_indicators, market_regime
+from fixed8_backtest.strategy import add_entry_diagnostics, add_strategy_scores, build_feature_panel
 
-jobs:
-  update-signals:
-    runs-on: ubuntu-latest
-    timeout-minutes: 55
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+from holdout_ranker_ensemble import (
+    FEATURE_COLUMNS,
+    _ClassifierProbWrapper,
+    _add_enhanced_features,
+    _add_forward_targets,
+    _add_rank_labels,
+    _candidate_mask,
+    _clean_features,
+    _fit_classifier,
+    _fit_ranker,
+    _fit_regressor,
+)
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: "pip"
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+ROOT = Path(__file__).resolve().parents[1]
+CONFIG_PATH = ROOT / "config" / "fixed8_control_eva_top15_pool_best_sweep.json"
+DATA_ROOT = Path(os.environ.get("FIXED8_DATA_DIR", ROOT / "outputs"))
+OUTPUT_DIR = DATA_ROOT / "today_model_signals"
 
-      - name: Restore price cache
-        uses: actions/cache@v4
-        with:
-          path: work/price_cache
-          key: yfinance-price-cache-${{ runner.os }}-${{ github.run_id }}
-          restore-keys: |
-            yfinance-price-cache-${{ runner.os }}-
-            
-      - name: Show run time
-        run: |
-          echo "UTC time:"
-          date -u
-          echo "Taipei time:"
-          TZ=Asia/Taipei date
-          
-      - name: Run signal update
-        env:
-          PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}/scripts
-          FIXED8_DATA_DIR: ${{ github.workspace }}/outputs
-          FIXED8_PRICE_CACHE_DIR: ${{ github.workspace }}/work/price_cache
-        run: python scripts/run_today_model_signals.py
 
-      - name: Commit and push updated signals
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add outputs/today_model_signals/*.csv
+def main() -> None:
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    with CONFIG_PATH.open("r", encoding="utf-8") as handle:
+        config = json.load(handle)
 
-          if git diff --cached --quiet; then
-            echo "No signal changes to commit."
-            exit 0
-          fi
+    raw_data = _refresh_and_load_prices(config)
+    benchmark = raw_data.pop(config["benchmark_symbol"])
+    data = {symbol: add_indicators(frame) for symbol, frame in raw_data.items() if not frame.empty}
+    benchmark = add_indicators(benchmark)
+    regime = market_regime(benchmark, config)
+    fundamentals = load_fundamentals(ROOT / config["fundamentals_csv"])
 
-          git commit -m "Update Fixed8 daily signals"
-          git pull --rebase origin main
-          git push origin HEAD:main
+    panel = build_feature_panel(data, benchmark, regime)
+    panel = add_strategy_scores(panel, fundamentals, config)
+    panel = add_entry_diagnostics(panel, config)
+    panel = _add_rank_labels(_add_forward_targets(_add_enhanced_features(panel)))
+    panel = _add_current_model_scores(panel)
+    panel = _add_two_stage_scores(panel)
+    panel = _add_symbol_names(panel, config)
+    latest_date = panel["date"].max()
+    latest = panel[panel["date"] == latest_date].copy()
+    candidates = latest[_candidate_mask(latest)].copy()
+
+    rankings = {}
+    for name, score_col in [
+        ("aggressive_fund_final_ml", "fund_final_ml"),
+        ("defensive_fund_ml_85_15", "fund_ml_85_15"),
+        ("fundamental_only", "fundamental_rank_score"),
+        ("final_score_only", "final_score"),
+        ("stable_ml_only", "stable_ensemble_score"),
+    ]:
+        ranking = _ranking(candidates, score_col)
+        rankings[name] = ranking
+        ranking.to_csv(OUTPUT_DIR / f"{name}_{latest_date.date()}.csv", index=False)
+
+    latest.to_csv(OUTPUT_DIR / f"latest_features_{latest_date.date()}.csv", index=False)
+    candidates.to_csv(OUTPUT_DIR / f"latest_candidates_{latest_date.date()}.csv", index=False)
+    summary = _summary(panel, latest, candidates, rankings, config)
+    summary.to_csv(OUTPUT_DIR / f"summary_{latest_date.date()}.csv", index=False)
+    _write_named_outputs(latest_date.date())
+
+    print(f"latest_date={latest_date.date()}")
+    market_state = _latest_market_regime(panel, latest)
+    print(f"market_regime={market_state}")
+    print(f"universe_rows={len(latest)}")
+    print(f"candidate_rows={len(candidates)}")
+    print("\nSummary:")
+    print(summary.to_string(index=False))
+    for name, ranking in rankings.items():
+        print(f"\n{name}:")
+        if ranking.empty:
+            print("No candidates")
+        else:
+            print(ranking.head(10).to_string(index=False))
+    print(f"\nSaved outputs to {OUTPUT_DIR}")
+
+
+def _refresh_and_load_prices(config: dict) -> dict[str, pd.DataFrame]:
+    symbols = read_universe(ROOT / config["universe_csv"], config["benchmark_symbol"])
+    all_symbols = sorted(set(symbols + [config["benchmark_symbol"]]))
+    cache_dir = Path(os.environ.get("FIXED8_PRICE_CACHE_DIR", ROOT / config["price_cache_dir"]))
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    if os.environ.get("FIXED8_SKIP_PRICE_REFRESH") == "1":
+        return _load_cached_prices(all_symbols, config["start"], cache_dir)
+    latest_cached = _latest_cached_date(cache_dir)
+    start = max(pd.Timestamp(config["start"]), latest_cached - pd.Timedelta(days=10)).strftime("%Y-%m-%d")
