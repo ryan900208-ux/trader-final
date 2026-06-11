@@ -1,8 +1,8 @@
 ﻿item,value
 latest_date,2026-06-11
 market_regime,bull
-universe_rows,1081
-candidate_rows,119
+universe_rows,1084
+candidate_rows,118
 max_positions,5
 position_weight,0.2
 aggressive_fund_final_ml_top5,"1342.TW 八貫,2025.TW 千興,2379.TW 瑞昱,6197.TW 佳必琪,2454.TW 聯發科"
