@@ -1,0 +1,12 @@
+﻿item,value
+latest_date,2026-06-24
+market_regime,bull
+universe_rows,1080
+candidate_rows,85
+max_positions,5
+position_weight,0.2
+aggressive_fund_final_ml_top5,"2527.TW 宏璟,3014.TW 聯陽,6691.TW 洋基工程,3034.TW 聯詠,6944.TW 兆聯實業"
+defensive_fund_ml_85_15_top5,"6944.TW 兆聯實業,2527.TW 宏璟,3014.TW 聯陽,3006.TW 晶豪科,2330.TW 台積電"
+fundamental_only_top5,"2408.TW 南亞科,2330.TW 台積電,3006.TW 晶豪科,2344.TW 華邦電,6515.TW 穎崴"
+final_score_only_top5,"2344.TW 華邦電,6197.TW 佳必琪,2408.TW 南亞科,3026.TW 禾伸堂,3008.TW 大立光"
+stable_ml_only_top5,"6691.TW 洋基工程,3346.TW 麗清,6757.TW 台灣虎航,2030.TW 彰源,2414.TW 精技"
