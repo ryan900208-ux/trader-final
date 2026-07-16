@@ -1,0 +1,12 @@
+﻿item,value
+latest_date,2026-07-16
+market_regime,bull
+universe_rows,1081
+candidate_rows,84
+max_positions,5
+position_weight,0.2
+aggressive_fund_final_ml_top5,"2423.TW 固緯,8028.TW 昇陽半導體,2645.TW 長榮航太,6944.TW 兆聯實業,4807.TW 日成-KY"
+defensive_fund_ml_85_15_top5,"6944.TW 兆聯實業,2423.TW 固緯,4807.TW 日成-KY,2408.TW 南亞科,6446.TW 藥華藥"
+fundamental_only_top5,"2408.TW 南亞科,2330.TW 台積電,6446.TW 藥華藥,2423.TW 固緯,6944.TW 兆聯實業"
+final_score_only_top5,"6446.TW 藥華藥,2423.TW 固緯,3167.TW 大量,8046.TW 南電,6525.TW 捷敏-KY"
+stable_ml_only_top5,"3702.TW 大聯大,2414.TW 精技,4807.TW 日成-KY,2601.TW 益航,2243.TW 宏旭-KY"
