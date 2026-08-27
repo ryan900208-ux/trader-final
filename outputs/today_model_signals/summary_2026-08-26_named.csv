@@ -1,8 +1,8 @@
 ﻿item,value
 latest_date,2026-08-26
 market_regime,neutral
-universe_rows,1079
-candidate_rows,104
+universe_rows,1083
+candidate_rows,101
 max_positions,5
 position_weight,0.2
 aggressive_fund_final_ml_top5,"3017.TW 奇鋐,2383.TW 台光電,5515.TW 建國,3034.TW 聯詠,6753.TW 龍德造船"
